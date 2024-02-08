@@ -4,8 +4,11 @@ IMPORTANT NOTE: Model Evaluation information can be found by clicking on the REA
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 import json
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import make_pipeline
+from sklearn.metrics import r2_score
+import numpy as np
 
 # Select specific columns from the csv files based on how relevant they are to training the model
 GAME_WEATHER = pd.read_csv(
@@ -54,16 +57,16 @@ with open('stadium.json') as f:
                              COMBINED_ATTENDANCE_DATA, on=['team', 'year'])
     TRAINING_DATA.fillna(0, inplace=True)
 
+    print("TRAINING DATA SAMPLE: ")
     print(TRAINING_DATA.head())
 
     # Train linear regression model to predict weekly attendance based on temperature and simple rating
     X = TRAINING_DATA[['Temperature', 'simple_rating']]
     Y = TRAINING_DATA['weekly_attendance']
-    linear_regression_model = LinearRegression().fit(X, Y)
 
-    # Print the model's coefficients
-    print(f"Linear Model Coefficients: {linear_regression_model.coef_}")
-    print(f"Linear Model Intercept: {linear_regression_model.intercept_}")
+    X_training_data, X_actual_data, Y_training_data, Y_actual_data = train_test_split(
+        X, Y, test_size=0.4, random_state=58)
+    linear_regression_model = LinearRegression().fit(X_training_data, Y_training_data)
 
     # Sample prediction
     test1 = pd.DataFrame([[70, 0.5]], columns=['Temperature', 'simple_rating'])
@@ -72,6 +75,7 @@ with open('stadium.json') as f:
     test3 = pd.DataFrame([[50, 10]], columns=['Temperature', 'simple_rating'])
     test4 = pd.DataFrame([[80, 10]], columns=['Temperature', 'simple_rating'])
 
+    print("\n")
     print("Linear Regression Model Predictions:")
     print(
         f"Temperature of 70 degrees and a team rating of 0.5 yields {int(linear_regression_model.predict(test1)[0])} fans")
@@ -82,36 +86,36 @@ with open('stadium.json') as f:
     print(
         f"Temperature of 80 degrees and a team rating of 10 yields {int(linear_regression_model.predict(test4)[0])} fans")
 
-    print("\n\n\n\n")
+    print("\n\n")
 
     # Create a polynomial regression model
-    DEGREE = 4
-    poly_model = make_pipeline(
-        PolynomialFeatures(degree=4), LinearRegression())
+    DEGREE = 8
+    poly_features = PolynomialFeatures(degree=DEGREE)
+    polynomial_regression_model = make_pipeline(
+        poly_features, LinearRegression())
 
-    poly_model.fit(X, Y)
+    polynomial_regression_model.fit(X_training_data, Y_training_data)
+
     print("Polynomial Regression Model Predictions:")
     print(
-        f"Temperature of 70 degrees and a team rating of 0.5 yields {int(poly_model.predict(test1)[0])} fans")
+        f"Temperature of 70 degrees and a team rating of 0.5 yields {int(polynomial_regression_model.predict(test1)[0])} fans")
     print(
-        f"Temperature of 90 degrees and a team rating of 5 yields {int(poly_model.predict(test2)[0])} fans")
+        f"Temperature of 90 degrees and a team rating of 5 yields {int(polynomial_regression_model.predict(test2)[0])} fans")
     print(
-        f"Temperature of 50 degrees and a team rating of 10 yields {int(poly_model.predict(test3)[0])} fans")
+        f"Temperature of 50 degrees and a team rating of 10 yields {int(polynomial_regression_model.predict(test3)[0])} fans")
     print(
-        f"Temperature of 80 degrees and a team rating of 10 yields {int(poly_model.predict(test4)[0])} fans")
+        f"Temperature of 80 degrees and a team rating of 10 yields {int(polynomial_regression_model.predict(test4)[0])} fans")
 
-    from sklearn.metrics import r2_score
-
-    # Assume you have some test data and predictions from your models
-    y_test = ...
-    linear_predictions = ...
-    poly_predictions = ...
+    # Make predictions with both models
+    linear_regression_predictions = linear_regression_model.predict(X_actual_data)
+    polynomial_predictions = polynomial_regression_model.predict(
+        X_actual_data)
 
     # Calculate R-squared for the linear regression model
-    linear_r2 = r2_score(y_test, linear_predictions)
+    linear_r2 = r2_score(Y_actual_data, linear_regression_predictions)
 
     # Calculate R-squared for the polynomial regression model
-    poly_r2 = r2_score(y_test, poly_predictions)
+    poly_r2 = r2_score(Y_actual_data, polynomial_predictions)
 
     print(f"Linear Regression R^2: {linear_r2}")
     print(f"Polynomial Regression R^2: {poly_r2}")
