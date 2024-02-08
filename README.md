@@ -10,7 +10,7 @@ Instructions to run file:
 
 Problem: Predicting attendance at NFL games <br>
 Target Variable: Attendance <br>
-Features / Independent Variables: Weather, Current Win Rate, Strength of Opponent <br>
+Features / Independent Variables: Temperature, Team Rating <br>
 
 # 2. Data Collection
 
